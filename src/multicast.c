@@ -24,7 +24,7 @@ int main(int argc, char** argv)
     {
         printf("Expected 4 arguments but only received .\n", (argc - 1));
         printf("./multicast [multicastAddress] [multicastPort] [recvHost] [recvPort]\n");
-        printf("Ex: ./multicast 224.1.1.1 5000 192.168.0.12 5000");
+        printf("Ex: ./multicast 192.168.0.12 5000 224.1.1.1 5000");
         return 1;
     }
 
@@ -34,10 +34,10 @@ int main(int argc, char** argv)
     struct sockaddr_in pubAddr, recvAddr;
 
     const int TRUE = 1;
-    const int recvPort = atoi(argv[4]);
-    const int groupPort = atoi(argv[2]);
-    const char* const recvHost = argv[3];
-    const char* const groupHost = argv[1];
+    const int recvPort = atoi(argv[2]);
+    const int groupPort = atoi(argv[4]);
+    const char* const recvHost = argv[1];
+    const char* const groupHost = argv[3];
 
     // Clears memory of sockaddr_in structures
     memset(&pubAddr, 0, sizeof(pubAddr));
