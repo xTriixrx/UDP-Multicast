@@ -11,21 +11,27 @@
 int main(int argc, char** argv)
 {
     int recvfd;
-    size_t read;
     socklen_t len;
     char addr[256];
     const int TRUE = 1;
-	char buffer[BUFSIZ];
     struct ip_mreq mreq;
+    FILE* outFile = NULL;
+    unsigned char buffer[BUFSIZ];
 	struct sockaddr_in multicAddr, sendAddr;
+    const char* const WRITE_BINARY_ONLY = "wb+";
 
+    const int recvPort = atoi(argv[2]);
+    const char* const recvHost = argv[1];
+    const char* const outputFile = argv[3];
+
+    memset(buffer, 0, sizeof(buffer));
     memset(&multicAddr, 0, sizeof(multicAddr));
 
-	if (argc != 3)
+	if (argc != 4)
     {
-        printf("Expected 2 arguments but only received .\n", (argc - 1));
-        printf("Usage: ./receiver [multicast group] [multicast port]");
-        printf("Ex: ./receiver 224.1.1.1 5000");
+        printf("Expected 3 arguments but only received .\n", (argc - 1));
+        printf("Usage: ./receiver [multicast group] [multicast port] [output_path]");
+        printf("Ex: ./receiver 224.1.1.1 5000 output_file");
 	    return -1;
     }
 
@@ -41,14 +47,14 @@ int main(int argc, char** argv)
 	multicAddr.sin_family = AF_INET;
 	
     // Set the multicast socket address information to the group address provided
-    if (inet_pton(AF_INET, argv[1], &multicAddr.sin_addr.s_addr) < 0)
+    if (inet_pton(AF_INET, recvHost, &multicAddr.sin_addr.s_addr) < 0)
     {
         perror("Multicast socket address conversion w/ inet_pton failed");
 	    return -1;   
     }
 
     // Set the multicast socket port information to the port provided
-	multicAddr.sin_port = htons(atoi(argv[2]));
+	multicAddr.sin_port = htons(recvPort);
 
     // Set the multicast socket to be reusable by others
 	if (setsockopt(recvfd, SOL_SOCKET, SO_REUSEADDR, &TRUE, sizeof(TRUE)) < 0)
@@ -65,7 +71,7 @@ int main(int argc, char** argv)
     }
 	
     // Set the multicast mreq address information to the group address provided
-	if (inet_pton(AF_INET, argv[1], &mreq.imr_multiaddr.s_addr) < 0)
+	if (inet_pton(AF_INET, recvHost, &mreq.imr_multiaddr.s_addr) < 0)
     {
         perror("Multicast mreq address inet_pton failed.");
 	    return -1;
@@ -80,25 +86,29 @@ int main(int argc, char** argv)
         perror("Multicast setsockopt ADD_MEMBERSHIP failed");
 	    return -1;
     }
+
+    // Open output file for writing binary data
+    outFile = fopen(outputFile, WRITE_BINARY_ONLY);
     
+    size_t read = 0;
+    socklen_t slen = sizeof(struct sockaddr_in);
+
     // Enter infinite loop and continously receive packets from multicast socket
     while (TRUE)
 	{
         // Block until some packet is received from the multicast socket and store packet into the buffer.
-		read = recvfrom(recvfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &sendAddr, (socklen_t *) sizeof(sendAddr));
+		read = recvfrom(recvfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &sendAddr, &slen);
         
         // If some packet was read into buffer, output to stdout and flush
-        if (read > 0)
-        {
-            fputs(buffer, stdout);
-            fflush(stdout);
-        }
+        fwrite(buffer, sizeof(unsigned char), read, outFile);
+        fflush(outFile);
 
         // Clear buffer of its content
-		memset(&buffer, 0, sizeof(buffer));
+		memset(buffer, 0, sizeof(buffer));
 	}
 
     close(recvfd);
+    fclose(outFile);
 
 	return 0;
 }

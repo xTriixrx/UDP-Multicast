@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -30,7 +32,7 @@ int main(int argc, char** argv)
 
     const int on = 1;
     int pubfd, recvfd;
-    char buffer[BUFSIZ];
+    unsigned char buffer[BUFSIZ];
     struct sockaddr_in pubAddr, recvAddr;
 
     const int TRUE = 1;
@@ -40,6 +42,7 @@ int main(int argc, char** argv)
     const char* const groupHost = argv[3];
 
     // Clears memory of sockaddr_in structures
+    memset(buffer, 0, sizeof(buffer));
     memset(&pubAddr, 0, sizeof(pubAddr));
     memset(&recvAddr, 0, sizeof(recvAddr));
 
@@ -110,17 +113,22 @@ int main(int argc, char** argv)
 	    return -1;
     }
 
+    size_t read = 0;
+    socklen_t slen = sizeof(struct sockaddr_in);
+
     // Enter infinite loop to continuously receive packets from the recv socket and pass the packets to the multicast publish socket
 	while (TRUE)
 	{
         // Block until some packet is received from the receive socket and store packet into the buffer
-        recvfrom(recvfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &recvAddr, (socklen_t *) sizeof(recvAddr));
+        read = recvfrom(recvfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &recvAddr, &slen);
 		
+        printf("Read bytes: %d\n", read);
+        
         // Submit buffer containing captured packet to multicast publish socket
-        sendto(pubfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &pubAddr, sizeof(pubAddr));
+        sendto(pubfd, buffer, read, 0, (struct sockaddr*) &pubAddr, sizeof(pubAddr));
         
         // Clear buffer of its contents
-        memset(&buffer, 0, sizeof(buffer));
+        memset(buffer, 0, sizeof(buffer));
 	}
 
     close(pubfd);
