@@ -11,7 +11,8 @@ int main(int argc, char** argv)
     if (argc != 4)
     {
         printf("Expected 3 arguments but only received %d\n.", (argc - 1));
-        printf("./binaryPub 127.0.0.1 6000 sampleFile");
+        printf("./binaryPub [destinationHost] [destinationPort] [inputPath]\n");
+        printf("./binaryPub 127.0.0.1 6000 sampleFile\n");
         return -1;
     }
 

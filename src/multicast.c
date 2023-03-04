@@ -25,7 +25,7 @@ int main(int argc, char** argv)
     if (argc != 5)
     {
         printf("Expected 4 arguments but only received .\n", (argc - 1));
-        printf("./multicast [multicastAddress] [multicastPort] [recvHost] [recvPort]\n");
+        printf("./multicast [recvHost] [recvPort] [multicastAddress] [multicastPort]\n");
         printf("Ex: ./multicast 192.168.0.12 5000 224.1.1.1 5000");
         return 1;
     }
